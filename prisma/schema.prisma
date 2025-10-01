@@ -1,0 +1,145 @@
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Optional, but recommended for Prisma CLI
+}
+
+// --------------------
+// AUTHENTICATION MODELS
+// --------------------
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  hashedPassword String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  standard       String? // e.g., "10th", "12th", "Graduate"
+  role           String    @default("USER") // For Admin panel
+
+  // Relations
+  accounts     Account[]
+  sessions     Session[]
+  testResults  TestResult[]
+  answers      UserAnswer[]
+  subscription Subscription? // ✅ One-to-one relation (fixed)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --------------------
+// CAREER TEST MODELS
+// --------------------
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  RATING_SCALE
+  YES_NO
+}
+
+model Question {
+  id        String       @id @default(cuid())
+  text      String
+  type      QuestionType
+  createdAt DateTime     @default(now())
+
+  // Relations
+  options QuestionOption[]
+  answers UserAnswer[]
+}
+
+model QuestionOption {
+  id         String @id @default(cuid())
+  text       String
+  questionId String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model UserAnswer {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  answer     String // Could be the optionId, a rating, or "yes"/"no"
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId]) // Enforce one answer per question per user
+}
+
+// --------------------
+// RESULTS & PAYMENTS
+// --------------------
+
+enum SubscriptionTier {
+  FREE
+  GOLD
+  PLATINUM
+}
+
+model TestResult {
+  id              String           @id @default(cuid())
+  userId          String
+  generatedReport String           @db.Text // AI-generated report
+  createdAt       DateTime         @default(now())
+  tier            SubscriptionTier @default(FREE)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  razorpayCustomerId String?          @unique
+  razorpayPlanId     String?
+  razorpayPaymentId  String?
+  status             String? // e.g., "active", "cancelled"
+  tier               SubscriptionTier @default(FREE)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

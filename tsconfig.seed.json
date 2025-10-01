@@ -1,0 +1,11 @@
+// tsconfig.seed.json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",           // 👈 Compatible with ts-node
+    "moduleResolution": "Node",     // 👈 Required for ts-node to resolve imports
+    "noEmit": false,                // 👈 Needed if you ever want to compile
+    "outDir": "dist"                // 👈 Optional, if compiling seed files
+  },
+  "include": ["prisma/**/*.ts"]
+}
