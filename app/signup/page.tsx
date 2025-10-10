@@ -5,14 +5,51 @@ import { useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+// Define the validation schema using Zod
+const formSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters.'),
+  email: z.string().email('Invalid email address.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
+  confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters.'),
+}).superRefine((data, ctx) => {
+  // Cross-field validation (check if password and confirmPassword match)
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      path: ['confirmPassword'],
+      message: 'Passwords do not match',
+      code: z.ZodIssueCode.custom,
+    });
+  }
+});
+
+// Infer the type from the schema for type safety
+type SignupFormValues = z.infer<typeof formSchema>;
 
 export default function SignupPage() {
   const router = useRouter();
-  const [data, setData] = useState({ name: '', email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
 
-  const registerUser = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Initialize react-hook-form with Zod resolver
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset, // To clear form after successful submission
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
+
+  const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     const toastId = toast.loading('Creating account...');
 
@@ -20,6 +57,7 @@ export default function SignupPage() {
       await axios.post('/api/register', data);
       toast.success('Account created! Please log in.', { id: toastId });
       router.push('/login');
+      reset(); // Clear the form
     } catch (error) {
       const err = error as AxiosError;
       const errorMessage =
@@ -36,54 +74,72 @@ export default function SignupPage() {
         <h2 className="text-3xl font-bold text-center text-gray-900">
           Create an Account
         </h2>
-        <form className="mt-8 space-y-6" onSubmit={registerUser}>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          {/* Name Input */}
           <div>
-            <label htmlFor="name" className="sr-only">
-              Name
-            </label>
+            <label htmlFor="name" className="sr-only">Name</label>
             <input
               id="name"
-              name="name"
               type="text"
-              required
+              {...register('name')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500"
               placeholder="Full Name"
-              value={data.name}
-              onChange={(e) => setData({ ...data, name: e.target.value })}
             />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+            )}
           </div>
+
+          {/* Email Input */}
           <div>
-            <label htmlFor="email-address" className="sr-only">
-              Email address
-            </label>
+            <label htmlFor="email-address" className="sr-only">Email address</label>
             <input
               id="email-address"
-              name="email"
               type="email"
               autoComplete="email"
-              required
+              {...register('email')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500"
               placeholder="Email address"
-              value={data.email}
-              onChange={(e) => setData({ ...data, email: e.target.value })}
             />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+            )}
           </div>
+
+          {/* Password Input */}
           <div>
-            <label htmlFor="password" className="sr-only">
-              Password
-            </label>
+            <label htmlFor="password" className="sr-only">Password</label>
             <input
               id="password"
-              name="password"
               type="password"
-              autoComplete="current-password"
-              required
+              autoComplete="new-password"
+              {...register('password')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500"
               placeholder="Password"
-              value={data.password}
-              onChange={(e) => setData({ ...data, password: e.target.value })}
             />
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+            )}
           </div>
+
+          {/* Confirm Password Input */}
+          <div>
+            <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              {...register('confirmPassword')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500"
+              placeholder="Confirm Password"
+            />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+            )}
+          </div>
+
+          {/* Submit Button */}
           <div>
             <button
               type="submit"
@@ -94,12 +150,10 @@ export default function SignupPage() {
             </button>
           </div>
         </form>
+
         <p className="text-center text-sm">
           Already have an account?{' '}
-          <Link
-            href="/login"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
+          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
             Log In
           </Link>
         </p>
