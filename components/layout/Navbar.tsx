@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image'; // Import Image component
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
-import { useState } from 'react';
+import { useState } from 'react'; // Removed the unused import of useEffect
 import { ThemeToggle } from '@/components/ui/ThemeToggle'; // Import ThemeToggle
 
 export const Navbar = () => {
@@ -18,13 +18,13 @@ export const Navbar = () => {
   // Links for the navbar
   const navLinks = (
     <>
-      <Link href="/features" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+      <Link href="/#features" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
         Features
       </Link>
-      <Link href="/about" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-        About Us
+      <Link href="/#about" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+        About 
       </Link>
-      <Link href="/faq" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+      <Link href="/#faq" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
         FAQ
       </Link>
     </>
@@ -75,9 +75,7 @@ export const Navbar = () => {
           </div>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex md:items-center md:space-x-8">
-            {navLinks}
-          </div>
+          <div className="hidden md:flex md:items-center md:space-x-8">{navLinks}</div>
 
           {/* Desktop Auth Section */}
           <div className="hidden md:flex md:items-center">{authSection}</div>

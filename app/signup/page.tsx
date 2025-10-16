@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { signIn } from 'next-auth/react'; // Importing next-auth for Google Sign-In
 
 // Define the validation schema using Zod
 const formSchema = z.object({
@@ -66,6 +67,10 @@ export default function SignupPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSignup = async () => {
+    signIn('google', { callbackUrl: '/dashboard' });
   };
 
   return (
@@ -157,6 +162,25 @@ export default function SignupPage() {
             Log In
           </Link>
         </p>
+
+        {/* Google Sign In Button */}
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div>
+          <button
+            onClick={handleGoogleSignup}
+            className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+          >
+            Sign up with Google
+          </button>
+        </div>
       </div>
     </div>
   );
